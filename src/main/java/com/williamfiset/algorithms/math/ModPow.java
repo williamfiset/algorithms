@@ -25,31 +25,36 @@ public class ModPow {
     if (n < 0) {
       if (gcd(a, mod) != 1)
         throw new ArithmeticException("If n < 0 then must have gcd(a, mod) = 1");
-      return modPow(modInv(a, mod), -n, mod);
+      a = modInv(a, mod);
+      n = -n;
     }
 
-    // Normalize base into [0, mod)
-    a = ((a % mod) + mod) % mod;
+    // Overflow-safe normalization of base into [0, mod)
+    a %= mod;
+    if (a < 0)
+      a += mod;
 
-    long result = 1;
-    while (n > 0) {
+    long result = 1 % mod;
+    while (n != 0) {
       if ((n & 1) == 1)
         result = mulMod(result, a, mod);
       a = mulMod(a, a, mod);
-      n >>= 1;
+      n >>>= 1;
     }
     return result;
   }
 
   private static long modInv(long a, long m) {
-    a = ((a % m) + m) % m;
-    long x = egcd(a, m)[1];
-    return ((x % m) + m) % m;
+    a %= m;
+    if (a < 0)
+      a += m;
+    long x = egcd(a, m)[1] % m;
+    return x < 0 ? x + m : x;
   }
 
   private static long[] egcd(long a, long b) {
     if (b == 0)
-      return new long[] {a < 0 ? -a : a, 1L, 0L};
+      return new long[] { a < 0 ? -a : a, 1L, 0L };
     long[] v = egcd(b, a % b);
     long tmp = v[1] - v[2] * (a / b);
     v[1] = v[2];
@@ -58,9 +63,7 @@ public class ModPow {
   }
 
   private static long gcd(long a, long b) {
-    a = Math.abs(a);
-    b = Math.abs(b);
-    return b == 0 ? a : gcd(b, a % b);
+    return b == 0 ? Math.abs(a) : gcd(b, a % b);
   }
 
   /** Overflow-safe modular multiplication: (a * b) % mod. */
